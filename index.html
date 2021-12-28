@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <title>航班查询</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+    <!-- <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests"> -->
     <link rel="shortcut icon" href="/public/img/index.ico">
 
     <script>
@@ -124,9 +124,12 @@
     }
 
     function getInterFlight(data) {
+        console.log();
+        var interUrl = window.location.protocol == 'http:' ? ('http://ip-api.com/json?lang=zh-CN&&callback=setInterFlight&&time=' + getUnix()) : ('https://api.ip.sb/geoip?callback=setInterFlight&&time=' + getUnix())
         onloadScript(
             // 'http://ip-api.com/json?lang=zh-CN&&callback=setInterFlight&&time=' + getUnix(),
-            'https://api.ip.sb/geoip?callback=setInterFlight&&time=' + getUnix(),
+            // 'https://api.ip.sb/geoip?callback=setInterFlight&&time=' + getUnix(),
+            interUrl,
             function (s) {
                 console.log("onload setInterFlight script")
             },
