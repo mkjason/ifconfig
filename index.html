@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <title>航班查询</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
     <link rel="shortcut icon" href="/public/img/index.ico">
 
     <script>
@@ -124,7 +125,8 @@
 
     function getInterFlight(data) {
         onloadScript(
-            'http://ip-api.com/json?lang=zh-CN&&callback=setInterFlight&&time=' + getUnix(),
+            // 'http://ip-api.com/json?lang=zh-CN&&callback=setInterFlight&&time=' + getUnix(),
+            'https://api.ip.sb/geoip?callback=setInterFlight&&time=' + getUnix(),
             function (s) {
                 console.log("onload setInterFlight script")
             },
@@ -133,14 +135,14 @@
 
     function setInterFlight(data) {
         console.log(data);
-        document.getElementById("internationalFlight").innerText = `${data.query}\n${data.country} ${data.city} `;
+        document.getElementById("internationalFlight").innerText = `${data.ip||data.query}\n${data.country} ${data.city} `;
     }
 
     function getMagicFlight(data) {
         var magicFlight = document.getElementById('magicFlight');
         var iMagicFlight = document.createElement("iframe");
         iMagicFlight.id = "iMagicFlight";
-        iMagicFlight.src = "http://sspanel.net/ip.php?time=" + getUnix();
+        iMagicFlight.src = "https://sspanel.net/ip.php?time=" + getUnix();
         iMagicFlight.onload = onMagicFrameLoad;
         iMagicFlight.style.width = "100%";
         iMagicFlight.style.height = "40px";
