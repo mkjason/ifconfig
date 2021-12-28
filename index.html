@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>航班查询</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="/public/img/index.ico">
+
+    <script>
+        function onloadScript(src, callback) {
+            var script = document.createElement('script'),
+                head = document.getElementsByTagName('head')[0];
+            script.type = 'text/javascript';
+            script.charset = 'UTF-8';
+            script.src = src;
+            if (script.addEventListener) {
+                script.addEventListener('load', function () {
+                    // callback();
+                    if (typeof callback == "function") {
+                        callback(script);
+                    }
+                }, false);
+            } else if (script.attachEvent) {
+                script.attachEvent('onreadystatechange', function () {
+                    var target = window.event.srcElement;
+                    // if (target.readyState == 'loaded') {
+                    if (target.readyState == 'loaded' && typeof callback == "function") {
+                        callback(target);
+                    }
+                });
+            }
+            head.appendChild(script);
+        };
+    </script>
+</head>
+
+<body>
+    <div>
+
+
+        <div style="padding:20px 20px 20px;">
+            <div style="padding: 12px 30px;text-align: center;font-size: 28px;font-weight: bold;margin-bottom: 15px;color:#409eff;">
+                航班查询
+            </div>
+
+            <!-- <div style="padding: 12px 30px;border-radius: 40px;text-align: center;font-size: 20px;font-weight: bold;margin-bottom: 15px;background-color:#409eff;color:white;">
+                card.title
+            </div> -->
+
+            <div style="padding: 12px 0px;text-align: center;max-width: 600px;margin:0 auto;">
+                <div style="padding-bottom: 10px;">
+                    国内航班
+                </div>
+                <div style="padding: 12px 30px;border-radius: 40px;font-size: 1rem;font-weight: bold;margin-bottom: 15px;background-color:#f56c6c;color:white;">
+                    <span id="domesticFlight">
+                        <!-- &nbsp; -->
+                        Loading ...
+                    </span>
+                </div>
+            </div>
+
+            <div style="padding: 12px 0px;text-align: center;max-width: 600px;margin:0 auto;">
+                <div style="padding-bottom: 10px;">
+                    国际航班
+                </div>
+                <div style="padding: 12px 30px;border-radius: 40px;font-size: 1rem;font-weight: bold;margin-bottom: 15px;background-color:#67c23a;color:white;">
+                    <span id="internationalFlight">
+                        <!-- &nbsp; -->
+                        Loading ...
+                    </span>
+                </div>
+            </div>
+
+            <div style="padding: 12px 0px;text-align: center;max-width: 600px;margin:0 auto;">
+                <div style="padding-bottom: 10px;">
+                    国际航班
+                </div>
+                <div style="padding: 12px 30px;border-radius: 40px;font-size: 1rem;font-weight: bold;margin-bottom: 5px;background-color:#a843c9;color:white;">
+                    <span id="magicFlight">
+                        <div id="magicFlightLoading">Loading ...</div>
+                    </span>
+                </div>
+                <div style="font-size: 8px;">
+                    国际航班查询来源: <a href="http://ip111.cn/">ip111.cn</a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</body>
+
+<!-- js -->
+<script>
+    var magicLoaded = false;
+
+    function getUnix() {
+        return Math.floor(new Date().getTime() / 1000)
+    }
+
+    function isMobile() {
+        let info = navigator.userAgent;
+        let agents = ["Android", "iPhone", "SymbianOS", "Windows Phone", "iPod", "iPad"];
+        for (let i = 0; i < agents.length; i++) {
+            if (info.indexOf(agents[i]) >= 0) return true;
+        }
+        return false;
+    }
+
+    function getDomesticFlight(data) {
+        onloadScript(
+            'https://pv.sohu.com/cityjson?ie=utf-8&&time=' + getUnix(),
+            function (s) {
+                console.log("onload setDomesticFlight script")
+                setDomesticFlight(returnCitySN)
+            },
+        );
+    }
+
+    function setDomesticFlight(data) {
+        console.log(data);
+        document.getElementById("domesticFlight").innerText = `${data.cip}\n${data.cname} `;
+    }
+
+    function getInterFlight(data) {
+        onloadScript(
+            'http://ip-api.com/json?lang=zh-CN&&callback=setInterFlight&&time=' + getUnix(),
+            function (s) {
+                console.log("onload setInterFlight script")
+            },
+        );
+    }
+
+    function setInterFlight(data) {
+        console.log(data);
+        document.getElementById("internationalFlight").innerText = `${data.query}\n${data.country} ${data.city} `;
+    }
+
+    function getMagicFlight(data) {
+        var magicFlight = document.getElementById('magicFlight');
+        var iMagicFlight = document.createElement("iframe");
+        iMagicFlight.id = "iMagicFlight";
+        iMagicFlight.src = "http://sspanel.net/ip.php?time=" + getUnix();
+        iMagicFlight.onload = onMagicFrameLoad;
+        iMagicFlight.style.width = "100%";
+        iMagicFlight.style.height = "40px";
+        iMagicFlight.style.paddingTop = "2px";
+        iMagicFlight.style.display = "none";
+        iMagicFlight.frameBorder = "0";
+        magicFlight.appendChild(iMagicFlight);
+
+        setTimeout(function () {
+            if (!magicLoaded) { // if undefined or false valued
+                // 无法访问或者线路太差
+                console.log('看起来像是没有可用航班或者无线电信号太差了~');
+                // console.log(iMagicFlight)
+                // iMagicFlight.style.display = "none";
+                iMagicFlight.remove();
+                document.getElementById('magicFlightLoading').style.display = "none";
+
+                var magicFlightErr = document.createElement("div");
+                magicFlightErr.id = "magicFlightErr";
+                magicFlightErr.innerText = "看起来像是没有可用航班或者无线电信号太差了~";
+                magicFlightErr.style.width = "100%";
+                magicFlightErr.style.padding = "0px 0px 0px";
+                magicFlight.appendChild(magicFlightErr);
+            }
+        }, 7 * 1000);
+    }
+
+    function setMagicFlight(data) {
+        console.log(data);
+        // document.getElementById("magicFlight").innerText = `${data.ip} ${data.country} ${data.city} `;
+    }
+
+    function onMagicFrameLoad() {
+        console.log('iMagicFlight is loaded');
+        document.getElementById('magicFlightLoading').style.display = "none";
+        iMagicFlight.style.display = "block";
+        magicLoaded = true;
+    }
+
+    function init() {
+        // ip
+        getDomesticFlight();
+        getInterFlight();
+        getMagicFlight();
+    }
+
+    var openDebug = false;
+    if (openDebug && isMobile()) {
+        // 加载资源文件
+        onloadScript(
+            '/public/js/vendor/vconsole.js',
+            function () {
+                console.log("onload vconsole script")
+                var vConsole = new VConsole();
+                init();
+            },
+        );
+    } else {
+        init();
+    }
+</script>
+<!-- <script src="https://api.ipify.org?format=jsonp&callback=getInterFlight"></script> -->
+<!-- <script src="http://ip-api.com/json?callback=getInterFlight"></script> -->
+<!-- <script src="https://api.ip.sb/geoip?callback=getInterFlight"></script> -->
+<!-- <script src="https://ipv4.appspot.com/?callback=getMagicFlight"></script> -->
+<!-- <script src="http://jsonip.appspot.com/?callback=getMagicFlight"></script> -->
+
+</html>
