@@ -114,18 +114,31 @@
     }
 
     function getDomesticFlight(data) {
-        onloadScript(
-            'https://pv.sohu.com/cityjson?ie=utf-8&&time=' + getUnix(),
-            function (s) {
-                console.log("onload setDomesticFlight script")
-                setDomesticFlight(returnCitySN)
-            },
-        );
+        // onloadScript(
+        //     'https://whois.pconline.com.cn/ipJson.jsp',
+        //     function (s) {
+        //         console.log("onload setDomesticFlight script")
+        //         setDomesticFlight(IPCallBack)
+        //     },
+        // );
+
+        //该接口目前已支持跨域请求
+        let xhr = new XMLHttpRequest();
+        xhr.open('GET', 'https://ip.useragentinfo.com/json');
+        xhr.responseType = 'json';
+        xhr.send();
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+                let ipInfo = xhr.response;
+                // console.info(ipInfo);
+                setDomesticFlight(ipInfo)
+            }
+        }
     }
 
     function setDomesticFlight(data) {
         console.log(data);
-        document.getElementById("domesticFlight").innerText = `${data.cip}\n${data.cname} `;
+        document.getElementById("domesticFlight").innerText = `${data.ip}\n${data.country}${data.province}${data.city}${data.area} ${data.isp} ${data.net}`;
     }
 
     function getInterFlight(data) {
