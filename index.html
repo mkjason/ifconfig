@@ -178,10 +178,6 @@
   <script>
     var magicLoaded = false;
 
-    function getUnix() {
-      return Math.floor(new Date().getTime() / 1000);
-    }
-
     function isMobile() {
       let info = navigator.userAgent;
       let agents = [
@@ -232,13 +228,11 @@
       console.log();
       var interUrl =
         window.location.protocol == "http:"
-          ? "http://ip-api.com/json?lang=zh-CN&&callback=setInterFlight&&time=" +
-            getUnix()
-          : "https://api.ip.sb/geoip?callback=setInterFlight&&time=" +
-            getUnix();
+          ? `http://ip-api.com/json?lang=zh-CN&&callback=setInterFlight&&t{Date.now()}`
+          : `https://api.ip.sb/geoip?callback=setInterFlight&&t{Date.now()}`;
       onloadScript(
-        // 'http://ip-api.com/json?lang=zh-CN&&callback=setInterFlight&&time=' + getUnix(),
-        // 'https://api.ip.sb/geoip?callback=setInterFlight&&time=' + getUnix(),
+        // 'http://ip-api.com/json?lang=zh-CN&&callback=setInterFlight&&time=' + Date.now(),
+        // 'https://api.ip.sb/geoip?callback=setInterFlight&&time=' + Date.now(),
         interUrl,
         function (s) {
           console.log("onload setInterFlight script");
@@ -250,93 +244,65 @@
       console.log(data);
       document.getElementById("internationalFlight").innerText = `${
         data.ip || data.query
-      }\n${data.country} ${data.city} `;
+      }\n${data.country} ${data.city} ${data.isp} ${
+        data.as || "AS" + data.asn
+      } `;
     }
 
-    function getMagicFlight(data) {
-      var magicFlight = document.getElementById("magicFlight");
-      var iMagicFlight = document.createElement("iframe");
-      iMagicFlight.id = "iMagicFlight";
-      iMagicFlight.src = "https://sspanel.net/ip.php?time=" + getUnix();
-      iMagicFlight.onload = onMagicFrameLoad;
-      iMagicFlight.style.width = "100%";
-      iMagicFlight.style.height = "40px";
-      iMagicFlight.style.paddingTop = "2px";
-      iMagicFlight.style.display = "none";
-      iMagicFlight.frameBorder = "0";
-      magicFlight.appendChild(iMagicFlight);
-
-      setTimeout(function () {
-        if (!magicLoaded) {
-          // if undefined or false valued
-          // 无法访问或者线路太差
-          console.log("看起来像是没有可用航班或者无线电信号太差了~");
-          // console.log(iMagicFlight)
-          // iMagicFlight.style.display = "none";
-          iMagicFlight.remove();
-          document.getElementById("magicFlightLoading").style.display = "none";
-
-          var magicFlightErr = document.createElement("div");
-          magicFlightErr.id = "magicFlightErr";
-          magicFlightErr.innerText =
-            "看起来像是没有可用航班或者无线电信号太差了~";
-          magicFlightErr.style.width = "100%";
-          magicFlightErr.style.padding = "0px 0px 0px";
-          magicFlight.appendChild(magicFlightErr);
-        }
-      }, 7 * 1000);
-    }
-
+    // const magicLink = "https://maps.googleapis.com/maps/api/js";
+    const magicLink = "https://www.google.com/favicon.ico";
     function pingMagicFlight(data) {
       pingDomain(
-        "https://maps.googleapis.com/maps/api/js?&&t=" + getUnix(),
+        {
+          url: `${magicLink}`,
+          status: `待响应`,
+          time: 0,
+          mintime: 0,
+        },
         7 * 1000,
-        setMagicFlight
+        (domain) => {
+          console.log(domain);
+          document.getElementById("magicFlight").innerText = `${domain.status}`;
+        }
       );
     }
 
+    // 检查网络连通性, From jason5ng32/MyIP
     function pingDomain(domain, timeout, fn) {
-      var startTime = new Date().getTime();
-      var xhr = new XMLHttpRequest();
+      const beginTime = +new Date();
 
-      if (domain.indexOf("http") == -1) {
-        domain = "http://" + domain;
-      }
+      let img = new Image();
+      let timer = setTimeout(() => {
+        // 超时处理
+        domain.status = "看起来像是没有可用航班或者无线电信号太差了~";
+        domain.time = -2;
+        fn && fn(domain);
+      }, timeout);
 
-      xhr.open("GET", domain, true);
+      img.onload = () => {
+        clearTimeout(timer);
+        let domainTime = new Date() - beginTime;
 
-      xhr.onload = function () {
-        var endTime = new Date().getTime();
-        var latency = endTime - startTime;
-        console.log("Ping " + domain + " 成功，响应时间为 " + latency + "ms");
-        fn && fn("塔台响应呼叫, 信号强度: " + latency + "ms");
+        if (domain.mintime === 0) {
+          domain.mintime = domainTime;
+        } else {
+          domain.mintime = Math.min(domain.mintime, domainTime);
+        }
+
+        domain.time = domainTime;
+        domain.status = `塔台响应呼叫, 信号强度: ${domainTime}ms`;
+
+        fn && fn(domain);
       };
 
-      xhr.onerror = function () {
-        console.log("Ping " + domain + " 失败");
-        fn && fn("Failed ...");
+      img.onerror = () => {
+        clearTimeout(timer);
+        domain.status = `Ping ${domain} 失败`;
+        domain.time = -1;
+        fn && fn(domain);
       };
 
-      xhr.timeout = timeout;
-
-      xhr.ontimeout = function () {
-        console.log("Ping " + domain + " 超时");
-        fn && fn("看起来像是没有可用航班或者无线电信号太差了~");
-      };
-
-      xhr.send();
-    }
-
-    function setMagicFlight(data) {
-      console.log(data);
-      document.getElementById("magicFlight").innerText = `${data}`;
-    }
-
-    function onMagicFrameLoad() {
-      console.log("iMagicFlight is loaded");
-      document.getElementById("magicFlightLoading").style.display = "none";
-      iMagicFlight.style.display = "block";
-      magicLoaded = true;
+      img.src = `${domain.url}?${Date.now()}`;
     }
 
     function init() {
