@@ -28,7 +28,7 @@
 
     <script>
       function onloadScript(src, callback) {
-        var script = document.createElement("script"),
+        let script = document.createElement("script"),
           head = document.getElementsByTagName("head")[0];
         script.type = "text/javascript";
         script.charset = "UTF-8";
@@ -36,7 +36,7 @@
         if (script.addEventListener) {
           script.addEventListener(
             "load",
-            function () {
+            () => {
               // callback();
               if (typeof callback == "function") {
                 callback(script);
@@ -45,8 +45,8 @@
             false
           );
         } else if (script.attachEvent) {
-          script.attachEvent("onreadystatechange", function () {
-            var target = window.event.srcElement;
+          script.attachEvent("onreadystatechange", () => {
+            let target = window.event.srcElement;
             // if (target.readyState == 'loaded') {
             if (
               target.readyState == "loaded" &&
@@ -138,7 +138,7 @@
             </span>
           </div>
           <div style="font-size: 8px">
-            国际航班查询来源: <a href="https://ip-api.com/">ip-api.com</a>
+            <div>国际航班查询来源: <a id="ifLink" href=""></a></div>
           </div>
         </div>
 
@@ -166,9 +166,6 @@
               <div id="magicFlightLoading">Loading ...</div>
             </span>
           </div>
-          <!-- <div style="font-size: 8px;">
-                    科学航班查询来源: <a href="http://ip111.cn/">ip111.cn</a>
-                </div> -->
         </div>
       </div>
     </div>
@@ -176,7 +173,7 @@
 
   <!-- js -->
   <script>
-    var magicLoaded = false;
+    let magicLoaded = false;
 
     function isMobile() {
       let info = navigator.userAgent;
@@ -195,49 +192,54 @@
     }
 
     function getDomesticFlight(data) {
-      // onloadScript(
-      //     'https://whois.pconline.com.cn/ipJson.jsp',
-      //     function (s) {
-      //         console.log("onload setDomesticFlight script")
-      //         setDomesticFlight(IPCallBack)
-      //     },
-      // );
-
-      //该接口目前已支持跨域请求
+      // 该接口目前已支持跨域请求
       let xhr = new XMLHttpRequest();
-      xhr.open("GET", "https://ip.useragentinfo.com/json");
+      xhr.open("GET", `https://ip.useragentinfo.com/json?${Date.now()}`);
       xhr.responseType = "json";
+      xhr.onerror = () => {
+        if (xhr.status === 0) {
+          setDomesticFlight("网络错误发生");
+        } else {
+          setDomesticFlight(`请求错误：: ${xhr.status}`);
+        }
+      };
+
       xhr.send();
-      xhr.onreadystatechange = function () {
+
+      xhr.onreadystatechange = () => {
         if (xhr.readyState === 4) {
-          let ipInfo = xhr.response;
-          // console.info(ipInfo);
-          setDomesticFlight(ipInfo);
+          if (xhr.status === 200) {
+            setDomesticFlight(xhr.response);
+          }
         }
       };
     }
 
     function setDomesticFlight(data) {
       console.log(data);
-      document.getElementById(
-        "domesticFlight"
-      ).innerText = `${data.ip}\n${data.country}${data.province}${data.city}${data.area} ${data.isp} ${data.net}`;
+      let dfDom = document.getElementById("domesticFlight");
+      if (typeof data === "object") {
+        dfDom.innerText = `${data.ip}\n${data.country}${data.province}${data.city}${data.area} ${data.isp} ${data.net}`;
+      } else {
+        dfDom.innerText = `${data}`;
+      }
     }
 
     function getInterFlight(data) {
-      console.log();
-      var interUrl =
-        window.location.protocol == "http:"
-          ? `http://ip-api.com/json?lang=zh-CN&&callback=setInterFlight&&t{Date.now()}`
-          : `https://api.ip.sb/geoip?callback=setInterFlight&&t{Date.now()}`;
-      onloadScript(
-        // 'http://ip-api.com/json?lang=zh-CN&&callback=setInterFlight&&time=' + Date.now(),
-        // 'https://api.ip.sb/geoip?callback=setInterFlight&&time=' + Date.now(),
-        interUrl,
-        function (s) {
-          console.log("onload setInterFlight script");
-        }
-      );
+      let interUrl = "";
+      let ifLink = document.getElementById("ifLink");
+      if (window.location.protocol == "https:") {
+        interUrl = `https://api.ip.sb/geoip?callback=setInterFlight&&t=${Date.now()}`;
+        ifLink.href = "https://ip.sb/";
+        ifLink.innerText = "ip.sb";
+      } else {
+        interUrl = `http://ip-api.com/json?lang=zh-CN&&callback=setInterFlight&&t=${Date.now()}`;
+        ifLink.href = "https://ip-api.com/";
+        ifLink.innerText = "ip-api.com";
+      }
+      onloadScript(interUrl, function (s) {
+        console.log("onload setInterFlight script");
+      });
     }
 
     function setInterFlight(data) {
@@ -312,12 +314,12 @@
       pingMagicFlight();
     }
 
-    var openDebug = false;
+    let openDebug = false;
     if (openDebug && isMobile()) {
       // 加载资源文件
-      onloadScript("/public/js/vendor/vconsole.js", function () {
+      onloadScript("/public/js/vendor/vconsole.js", () => {
         console.log("onload vconsole script");
-        var vConsole = new VConsole();
+        let vConsole = new VConsole();
         init();
       });
     } else {
